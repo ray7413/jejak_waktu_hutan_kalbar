@@ -8,9 +8,10 @@ from config import (
 )
 
 from config import load_assets
-
-from world.forest_map import ForestMap
+from debug_menu import DebugMenu
+from game_state import GameState
 from ui.sidebar import Sidebar
+from world.forest_map import ForestMap
 
 
 # =========================
@@ -37,12 +38,9 @@ load_assets()
 # =========================
 
 forest_map = ForestMap()
-
 sidebar = Sidebar()
-
-year = 1
-
-selected_tile = None
+game = GameState(forest_map)
+debug_menu = DebugMenu()
 
 # Dragging state for right mouse pan
 dragging = False
@@ -57,6 +55,13 @@ running = True
 
 while running:
 
+    dt = clock.tick(FPS) / 1000.0
+    if not game.paused and game.simulation_speed > 0:
+        game.accumulator += dt * game.simulation_speed
+        while game.accumulator >= 1.0:
+            game.advance_day()
+            game.accumulator -= 1.0
+
     # ---------------------
     # EVENTS
     # ---------------------
@@ -66,38 +71,50 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                if game.paused:
+                    game.resume()
+                else:
+                    game.pause()
+            elif event.key == pygame.K_ESCAPE:
+                if debug_menu.visible:
+                    debug_menu.visible = False
+                else:
+                    game.selected_tile = None
+            elif event.key == pygame.K_r:
+                game.apply_restore()
+            elif event.key == pygame.K_p:
+                game.apply_replant()
+            elif event.key == pygame.K_t:
+                game.apply_protect()
+            elif event.key == pygame.K_n:
+                game.advance_days(1)
+
         # Mouse click
-
         if event.type == pygame.MOUSEBUTTONDOWN:
+            if debug_menu.visible:
+                if debug_menu.handle_click(event.pos, game, forest_map):
+                    continue
+                if event.button == 1:
+                    debug_menu.visible = False
+                    continue
 
-            # Left click: select tile
+            hud_click = sidebar.handle_click(event.pos, game)
+            if hud_click == "MENU":
+                debug_menu.toggle()
+                continue
+            if hud_click is not None:
+                continue
+
             if event.button == 1:
-
-                selected_tile = (
-                    forest_map.get_tile_at_mouse(
-                        event.pos
-                    )
-                )
-
+                selected_tile = forest_map.get_tile_at_mouse(event.pos)
+                game.selected_tile = selected_tile
                 if selected_tile:
-
                     x, y = selected_tile
-
                     tile = forest_map.tiles[y][x]
+                    print(f"Tile ({x}, {y}) - {tile.get_state_label()}")
 
-                    print(
-                        f"Tile ({x}, {y})"
-                    )
-
-                    print(
-                        f"Type: {tile.type}"
-                    )
-
-                    print(
-                        f"Health: {tile.health}"
-                    )
-
-            # Right click: start dragging/panning
             elif event.button == 3:
                 dragging = True
                 _drag_start_mouse = event.pos
@@ -125,7 +142,6 @@ while running:
                 pygame.mouse.get_pos()
             )
 
-
     # ---------------------
     # DRAW
     # ---------------------
@@ -134,24 +150,9 @@ while running:
 
     forest_map.draw(screen)
 
-    sidebar.draw(
-        screen,
-        year
-    )
-
-    # ---------------------
-    # Selected tile
-    # ---------------------
-
-    if selected_tile:
-
-        x, y = selected_tile
-
-        cx, cy = forest_map.grid_to_screen(
-            x,
-            y
-        )
-
+    if game.selected_tile:
+        x, y = game.selected_tile
+        cx, cy = forest_map.grid_to_screen(x, y)
         tile_img = forest_map.tiles[y][x].get_type()
         half_w = tile_img.get_width() * forest_map.zoom / 2 if tile_img else 32
         half_h = tile_img.get_height() * forest_map.zoom / 2 if tile_img else 16
@@ -170,10 +171,15 @@ while running:
             3
         )
 
+    sidebar.draw(
+        screen,
+        game,
+        forest_map,
+        game.selected_tile
+    )
+
+    debug_menu.draw(screen, game, forest_map)
 
     pygame.display.flip()
-
-    clock.tick(FPS)
-
 
 pygame.quit()
