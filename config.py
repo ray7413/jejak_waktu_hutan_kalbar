@@ -1,15 +1,17 @@
 # Window
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+import pygame
+
+SCREEN_WIDTH = 2000
+SCREEN_HEIGHT = 1000
 FPS = 60
 
 # Isometric tile
-TILE_WIDTH = 64
-TILE_HEIGHT = 32
+TILE_WIDTH = 80
+TILE_HEIGHT = 40
 
 # Map
-MAP_WIDTH = 20
-MAP_HEIGHT = 20
+MAP_WIDTH = 50
+MAP_HEIGHT = 50
 
 # Map position
 MAP_OFFSET_X = 640
@@ -18,11 +20,18 @@ MAP_OFFSET_Y = 100
 # Colors
 BACKGROUND = (24, 27, 24)
 
-FOREST = (55, 115, 60)
-FOREST_DARK = (38, 85, 43)
-RECOVERING = (95, 145, 70)
-DEGRADED = (120, 90, 55)
-WATER = (55, 110, 165)
+FOREST = None
+RECOVERING = None
+DEGRADED = None
+WATER = None
 
 GRID = (40, 70, 42)
 WHITE = (235, 235, 235)
+
+def load_assets():
+    global FOREST, RECOVERING, DEGRADED, WATER
+
+    FOREST = pygame.image.load("assets/ground/forest.png").convert_alpha()
+    RECOVERING = pygame.image.load("assets/ground/recovering.png").convert_alpha()
+    DEGRADED = pygame.image.load("assets/ground/degraded.png").convert_alpha()
+    WATER = pygame.image.load("assets/ground/water.png").convert_alpha()

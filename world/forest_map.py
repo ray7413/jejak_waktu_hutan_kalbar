@@ -21,6 +21,14 @@ class ForestMap:
         self.width = MAP_WIDTH
         self.height = MAP_HEIGHT
 
+        # Mutable offsets so the map can be panned/dragged at runtime
+        self.offset_x = MAP_OFFSET_X
+        self.offset_y = MAP_OFFSET_Y
+
+        self.zoom = 1.0
+        self.min_zoom = 0.5
+        self.max_zoom = 2.5
+
         self.tiles = []
 
         self.generate()
@@ -61,11 +69,29 @@ class ForestMap:
 
     def grid_to_screen(self, x, y):
 
-        screen_x = MAP_OFFSET_X + (x - y) * (TILE_WIDTH // 2)
+        # Use instance offsets and zoom so the map can be panned and zoomed at runtime
+        screen_x = self.offset_x + (x - y) * (TILE_WIDTH // 2) * self.zoom
 
-        screen_y = MAP_OFFSET_Y + (x + y) * (TILE_HEIGHT // 2)
+        screen_y = self.offset_y + (x + y) * (TILE_HEIGHT // 2) * self.zoom
 
         return screen_x, screen_y
+
+    def set_zoom(self, zoom, center):
+        mouse_x, mouse_y = center
+
+        old_zoom = self.zoom
+        new_zoom = max(self.min_zoom, min(self.max_zoom, zoom))
+
+        if new_zoom == old_zoom:
+            return
+
+        # Keep the map position stable under the mouse cursor while zooming
+        world_x = (mouse_x - self.offset_x) / old_zoom
+        world_y = (mouse_y - self.offset_y) / old_zoom
+
+        self.zoom = new_zoom
+        self.offset_x = mouse_x - world_x * new_zoom
+        self.offset_y = mouse_y - world_y * new_zoom
 
     # -------------------------
     # Draw
@@ -81,24 +107,22 @@ class ForestMap:
 
                 cx, cy = self.grid_to_screen(x, y)
 
-                points = [
-                    (cx, cy - TILE_HEIGHT // 2),
-                    (cx + TILE_WIDTH // 2, cy),
-                    (cx, cy + TILE_HEIGHT // 2),
-                    (cx - TILE_WIDTH // 2, cy)
-                ]
+                img = tile.get_type()
 
-                pygame.draw.polygon(
-                    screen,
-                    tile.get_color(),
-                    points
+                # Skip if assets not loaded yet
+                if img is None:
+                    continue
+
+                scaled_w = max(1, int(img.get_width() * self.zoom))
+                scaled_h = max(1, int(img.get_height() * self.zoom))
+                scaled_img = pygame.transform.smoothscale(
+                    img,
+                    (scaled_w, scaled_h)
                 )
 
-                pygame.draw.polygon(
-                    screen,
-                    GRID,
-                    points,
-                    1
+                screen.blit(
+                    scaled_img,
+                    (cx - scaled_w // 2, cy - scaled_h // 2)
                 )
 
     # -------------------------
@@ -118,14 +142,14 @@ class ForestMap:
                 dx = abs(mouse_x - cx)
                 dy = abs(mouse_y - cy)
 
-                # Diamond collision
-                if (
-                    dx / (TILE_WIDTH / 2)
-                    +
-                    dy / (TILE_HEIGHT / 2)
-                    <= 1
-                ):
+                img = self.tiles[y][x].get_type()
+                if img is None:
+                    continue
 
+                half_w = (img.get_width() * self.zoom) / 2
+                half_h = (img.get_height() * self.zoom) / 2
+
+                if (dx / half_w + dy / half_h) <= 1:
                     return x, y
 
         return None

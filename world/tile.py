@@ -1,4 +1,4 @@
-from config import FOREST, RECOVERING, DEGRADED, WATER
+import config
 
 
 class Tile:
@@ -11,18 +11,18 @@ class Tile:
         self.soil = 100
         self.water = 100
 
-    def get_color(self):
+    def get_type(self):
 
         if self.type == "forest":
-            return FOREST
+            return config.FOREST
 
         if self.type == "recovering":
-            return RECOVERING
+            return config.RECOVERING
 
         if self.type == "degraded":
-            return DEGRADED
+            return config.DEGRADED
 
         if self.type == "water":
-            return WATER
+            return config.WATER
 
-        return FOREST
+        return config.FOREST
