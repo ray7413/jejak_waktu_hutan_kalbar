@@ -98,7 +98,7 @@ class ForestMap:
 
         for y in range(self.height):
 
-            for x in range(self.wdth):
+            for x in range(self.width):
 
                 tile = self.tiles[x][y]
 
@@ -123,7 +123,32 @@ class ForestMap:
                 )
 
 
-    # draw border
+    # locate selected tile 
 
-        
+    def get_tile_at_mouse(self, mouse_pos):
 
+        mouse_x, mouse_y = mouse_pos
+
+        for y in range(self.height):
+
+            for x in range(self.width):
+
+                cx, cy = self.grid_to_screen(x, y)
+
+                dx = abs(mouse_x - cx)
+                dy = abs(mouse_y - cy)
+
+                img = self.tiles[y][x].get_type()
+                if img is None:
+                    continue
+
+                half_w = (img.get_width() * self.zoom) / 2
+                half_h = (img.get_height() * self.zoom) / 2
+
+                if half_w <= 0 or half_h <= 0:
+                    continue
+
+                if (dx / half_w + dy / half_h) <= 1:
+                    return x, y
+
+        return None

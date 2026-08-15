@@ -6,6 +6,7 @@ from config import (
     BACKGROUND
 )
 
+from map import ForestMap
 
 # initialization
 
@@ -22,6 +23,9 @@ pygame.display.set_caption(
 )
 
 clock = pygame.time.Clock()
+
+map = ForestMap()
+
 
 while running:
 
