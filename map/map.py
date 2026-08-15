@@ -9,7 +9,17 @@ from config import (
     MAP_OFFSET_X,
     MAP_OFFSET_Y,
     MAP_ZOOM_MIN,
-    MAP_ZOOM_MAX
+    MAP_ZOOM_MAX,
+    TILE_WIDTH,
+    TILE_HEIGHT
+)
+
+from assets import (
+    forest,
+    degraded,
+    burnt,
+    recovering,
+    water
 )
 
 class ForestMap:
@@ -28,4 +38,92 @@ class ForestMap:
 
         self.tiles = []
 
-        self.gener
+        self.generate()
+
+    # generate map
+    def generate(self):
+    
+            for y in range(self.height):
+    
+                row = []
+    
+                for x in range(self.width):
+    
+                    roll = random.random()
+    
+                    if roll < 0.75:
+                        tile_type = "forest"
+                    elif roll < 0.88:
+                        tile_type = "recovering"
+                    elif roll < 0.97:
+                        tile_type = "degraded"
+                    else:
+                        tile_type = "water"
+    
+                    tile = Tile(tile_type)
+                    if tile_type == "forest":
+                        tile.health = 85 + random.randint(0, 15)
+                        tile.biodiversity = 80 + random.randint(0, 15)
+                        tile.water = 75 + random.randint(0, 20)
+                    elif tile_type == "recovering":
+                        tile.health = 60 + random.randint(0, 20)
+                        tile.biodiversity = 50 + random.randint(0, 25)
+                        tile.water = 60 + random.randint(0, 20)
+                        tile.recovering = True
+                    elif tile_type == "degraded":
+                        tile.health = 40 + random.randint(0, 25)
+                        tile.biodiversity = 35 + random.randint(0, 25)
+                        tile.water = 50 + random.randint(0, 25)
+                        tile.degradation = 35 + random.randint(0, 30)
+                    else:
+                        tile.health = 20
+                        tile.biodiversity = 15
+                        tile.water = 50
+    
+                    row.append(tile)
+    
+                self.tiles.append(row)
+
+
+    # translate grid to xy coords
+
+    def grid_to_screen(self, x, y):
+
+        cx = self.offset_x + (x - y) * (TILE_WIDTH // 2) * self.zoom
+        cy = self.offset_y + (x + y) * (TILE_HEIGHT // 2) * self.zoom
+
+        return cx, cy
+
+    def draw(self, screen):
+
+        for y in range(self.height):
+
+            for x in range(self.wdth):
+
+                tile = self.tiles[x][y]
+
+                cx, cy = self.grid_to_screen(x, y)
+
+                img = tile.get_type()
+                
+                if img is None:
+                    continue
+
+                
+                scaled_w = max(1, int(img.get_width() * self.zoom))
+                scaled_h = max(1, int(img.get_height() * self.zoom))
+                scaled_img = pygame.transform.smoothscale(
+                    img,
+                    (scaled_w, scaled_h)
+                )
+
+                screen.blit(
+                    scaled_img,
+                    (cx - scaled_w // 2, cy - scaled_h // 2)
+                )
+
+
+    # draw border
+
+        
+
