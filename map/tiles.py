@@ -1,5 +1,5 @@
 class Tile:
-    def __init__(self, name, tile_type = "forest"):
+    def __init__(self, tile_type="forest"):
         self.type = tile_type
 
         self.health = 100
